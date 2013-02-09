@@ -363,12 +363,3 @@ void convexHull(vector<point>& P, vector<point>& res) {
 	while (!S.empty()) { res.push_back(S.top()); S.pop(); }
 }
 
-
-int main() {
-	printf("Hello world!\n");
-	point p1(-1, 2), p2(5, -4), o(0,0);
-	cout << pointOnSegment(p1, p2, o) << endl;;
-	cout << collinear(p1, p2, o) << endl;
-	return 0;
-}
-
