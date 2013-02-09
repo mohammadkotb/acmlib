@@ -18,7 +18,6 @@ typedef complex<double> point;
 #define all(a) (a).begin(),(a).end()
 #define EPS 1.0e-8 //take care of EPS value
 #define INF 1.0e9
-#define PI acos(-1)
 #define X real()
 #define Y imag()
 #define vec(a,b) ((b)-(a))
@@ -36,14 +35,12 @@ typedef complex<double> point;
 #define mid(a,b) (((a)+(b))/point(2,0))
 #define perp(a) (point(-(a).Y,(a).X))
 #define dist(a,b) (length(vec(a,b)))
-#define ccw(a,b,c) (cross(vec(a,b),vec(a,c)) > EPS)
-#define collinear(a,b,c) (fabs(cross(vec(a,b),vec(a,c))) < EPS)
 enum STATE { IN, OUT, BOUNDRY };
 
 bool intersect(const point& a, const point& b, const point& p, const point& q, point& ret) {
 	double d1 = cross(p - a, b - a);
 	double d2 = cross(q - a, b - a);
-	ret = (d1 * q - d2 * p) / (d1 - d2); // TODO handle special cases (segment intersections/end-points)
+	ret = (d1 * q - d2 * p) / (d1 - d2); // handle special cases (segment/end-points)
 	return fabs(d1 - d2) > EPS;
 }
 
@@ -66,7 +63,7 @@ double pointLineDist(const point& a, const point& b, const point& p) {
 	return fabs(cross(vec(a,b),vec(a,p)) / dist(a,b));
 }
 
-int circleLineIntersection(const point& p0, const point& p1, const point& cen, double rad, point& r1, point & r2) {
+int circleLineIntersection(const point& p0,const point& p1,const point&cen,double rad,point& r1,point&r2){
 	if (same(p0,p1)) {
 		if(fabs(lengthSqr(vec(p0,cen))-(rad*rad)) < EPS) {
 			r1 = r2 = p0;
@@ -116,18 +113,19 @@ double cosRule(long double a, long double b, long double c) {
    return acos(res);
 }
 
-int circleCircleIntersection(const point &c1, const double&r1, const point &c2, const double&r2, point &res1, point &res2) {
+int circleCircleIntersection(const point &c1, const double&r1, const point &c2, 
+					const double&r2, point &res1, point &res2) {
 	if (same(c1,c2) && fabs(r1 - r2) < EPS) {
 			res1 = res2 = c1;
-			return fabs(r1) < EPS ? 1 : INF;
+			return fabs(r1) < EPS ? 1 : OO;
 	}
 	double len = length(vec(c1,c2));
 	if (fabs(len - (r1 + r2)) < EPS || fabs(fabs(r1 - r2) - len) < EPS) {
-			point d, c; double r;
-			if (r1 > r2)  d = vec(c1,c2), c = c1, r = r1;
-			else  d = vec(c2,c1), c = c2, r = r2;
-			res1 = res2 = normalize(d) * r + c;
-			return 1;
+		point d, c; double r;
+		if (r1 > r2)  d = vec(c1,c2), c = c1, r = r1;
+		else  d = vec(c2,c1), c = c2, r = r2;
+		res1 = res2 = normalize(d) * r + c;
+		return 1;
 	}
 	if (len > r1 + r2 || len < fabs(r1 - r2))  return 0;
 	long double a = cosRule(r2, r1, len);
@@ -137,7 +135,7 @@ int circleCircleIntersection(const point &c1, const double&r1, const point &c2, 
 	return 2;
 }
 
-void circle2(const point& p1, const point& p2, point& cen, double& r) {
+void circle2(const point& p1, const point& p2, point& cen, long double& r) {
 	cen = mid(p1,p2);
 	r = length(vec(p1,p2)) / 2;
 }
@@ -196,7 +194,6 @@ double arcLength(const point& p1, const point& p2, const point& c, const double&
 	if (!ordered) { // order or p1 and p2 doesn't matter
 		return acos(dot) * r;
 	}
-
 	if (fabs(cross) <= EPS) { // either 0 or PI
 		if (dot < 0) // angle = PI
 			return PI * r;
@@ -207,7 +204,6 @@ double arcLength(const point& p1, const point& p2, const point& c, const double&
 	}
 	return 0.0;
 }
-
 
 // minimum enclosing circle
 // init p array with the points and ps with the number of points
@@ -361,5 +357,31 @@ void convexHull(vector<point>& P, vector<point>& res) {
 		else S.pop();
 	}
 	while (!S.empty()) { res.push_back(S.top()); S.pop(); }
+}
+
+double closest_pair() {
+	map<double, multiset<double> > points;
+	for (int i = 0; i < N; i++)   points[v[i].X].insert(v[i].Y);
+	map<double,multiset<double> >::iterator xitr1, xitr2, xitr3;
+	multiset<double>::iterator yitr1, yitr2, yitr3, yitr4;
+	double result = 10001.0; // INF
+	for (xitr1 = points.begin(); xitr1 != points.end(); xitr1++) {
+		double x1 = (*xitr1).first;
+		for (yitr1 = (*xitr1).second.begin(); yitr1 != (*xitr1).second.end(); yitr1++) {
+			double y1 = (*yitr1);
+			xitr3 = points.upper_bound(x1 + result);
+			for (xitr2 = xitr1; xitr2 != xitr3; xitr2++) {
+				double x2 = (*xitr2).first;
+				yitr3 = (*xitr2).second.lower_bound(y1 - result);
+				yitr4 = (*xitr2).second.upper_bound(y1 + result);
+				for (yitr2 = yitr3; yitr2 != yitr4; yitr2++) {
+					if (xitr1 == xitr2 && yitr1 == yitr2) continue;
+					double y2 = (*yitr2);
+					result = min(result, hypot(x1-x2, y1-y2));
+				}
+			}
+		}
+	}
+	return result;
 }
 
